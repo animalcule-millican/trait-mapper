@@ -1,0 +1,20 @@
+project_directory: "/home/glbrc.org/millican/repos/trait-mapper"
+sample_directory: "/home/glbrc.org/millican/repos/trait-mapper/test/data"
+sample_name: ['WT_TR_GHRAS_02.100000', 'WT_TR_GHRAS_02.10000', 'WT_TR_GHRAS_02.50000000', 'WT_TR_GHRAS_02.1000000', 'WT_TR_GHRAS_02.500000']
+outlog: "/home/glbrc.org/millican/TEST_TRAIT_MAPPER/data/.logs"
+reference_database: ["nitrogen-cycle", "microbial-eps", "plant-stimulation", "biocontrol", "phosphorus-cycle"]
+reference_directory: "/mnt/bigdata/linuxhome/millican/ref_db/pgp"
+taxonomy_DB: "/mnt/bigdata/linuxhome/millican/ref_db/trait_db/NR/NRDB"
+script_directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow/scripts"
+latency-wait: 90
+jobs: 100
+cores: 'all'
+keep-going: True
+rerun-incomplete: True
+unlock: True
+stats: "/home/glbrc.org/millican/repos/trait-mapper/.stats"
+d3dag: True
+summary: True
+detailed-summary: True
+report: "/home/glbrc.org/millican/repos/trait-mapper/.reports"
+directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow"

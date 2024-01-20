@@ -1,0 +1,37 @@
+java -ea -Xmx80g -Xms80g -cp /mnt/bigdata/linuxhome/millican/mambaforge/envs/trait-mapper/bin/current/ jgi.RQCFilter2 jni=t -Xmx80g in=/home/glbrc.org/millican/metagenome/lamps/data/reads/raw/CABBI19_005.fastq.gz out=$TMPDIR/out-test.fqz chastityfilter=f barcodefilter=f tmpdir=/home/glbrc.org/millican/TMPDIR/ancient-fox scafstats=/home/glbrc.org/millican/TMPDIR/ancient-fox/scaffoldStats.txt kmerstats=/home/glbrc.org/millican/TMPDIR/ancient-fox/kmerStats.txt log=/home/glbrc.org/millican/TMPDIR/ancient-fox/status.log filelist=/home/glbrc.org/millican/TMPDIR/ancient-fox/file-list.txt stats=/home/glbrc.org/millican/TMPDIR/ancient-fox/filterStats.txt ihist=/home/glbrc.org/millican/TMPDIR/ancient-fox/ihist_merge.txt outribo=/home/glbrc.org/millican/TMPDIR/ancient-fox/ribo.fq.gz reproduceName=/home/glbrc.org/millican/TMPDIR/ancient-fox/reproduce.sh jni=t mapk=15 maxns=3 maq=3 minlen=51 rqcfilterdata=/mnt/bigdata/linuxhome/millican/ref_db/RQCFilterData qtrim=r trimq=5 minlength=40 removehuman=f keephuman=f removedog=f removecat=f removemouse=f aggressivehuman=f aggressivemicrobe=f aggressive=f detectmicrobes=f removemicrobes=f filterpolya=f filterpolyg=0 phix=t lambda=f pjet=t sip=f chloromap=f mitomap=f ribomap=f removeribo=f clumpify=f dedupe=f sketch=f
+Executing jgi.RQCFilter2 [jni=t, -Xmx80g, in=/home/glbrc.org/millican/metagenome/lamps/data/reads/raw/CABBI19_005.fastq.gz, out=/home/glbrc.org/millican/TMPDIR/ancient-fox/out-test.fqz, chastityfilter=f, barcodefilter=f, tmpdir=/home/glbrc.org/millican/TMPDIR/ancient-fox, scafstats=/home/glbrc.org/millican/TMPDIR/ancient-fox/scaffoldStats.txt, kmerstats=/home/glbrc.org/millican/TMPDIR/ancient-fox/kmerStats.txt, log=/home/glbrc.org/millican/TMPDIR/ancient-fox/status.log, filelist=/home/glbrc.org/millican/TMPDIR/ancient-fox/file-list.txt, stats=/home/glbrc.org/millican/TMPDIR/ancient-fox/filterStats.txt, ihist=/home/glbrc.org/millican/TMPDIR/ancient-fox/ihist_merge.txt, outribo=/home/glbrc.org/millican/TMPDIR/ancient-fox/ribo.fq.gz, reproduceName=/home/glbrc.org/millican/TMPDIR/ancient-fox/reproduce.sh, jni=t, mapk=15, maxns=3, maq=3, minlen=51, rqcfilterdata=/mnt/bigdata/linuxhome/millican/ref_db/RQCFilterData, qtrim=r, trimq=5, minlength=40, removehuman=f, keephuman=f, removedog=f, removecat=f, removemouse=f, aggressivehuman=f, aggressivemicrobe=f, aggressive=f, detectmicrobes=f, removemicrobes=f, filterpolya=f, filterpolyg=0, phix=t, lambda=f, pjet=t, sip=f, chloromap=f, mitomap=f, ribomap=f, removeribo=f, clumpify=f, dedupe=f, sketch=f]
+Version 39.01
+
+Executing jgi.BBMerge [overwrite=true, in1=/home/glbrc.org/millican/metagenome/lamps/data/reads/raw/CABBI19_005.fastq.gz, outa=adaptersDetected.fa, reads=1m]
+Version 39.01
+
+Adapters counted: 8569
+Total time: 8.965 seconds.
+
+Pairs:               	1000000
+Joined:              	592173   	59.217%
+Ambiguous:           	406870   	40.687%
+No Solution:         	957       	0.096%
+Too Short:           	0       	0.000%
+
+Avg Insert:          	236.2
+Standard Deviation:  	35.0
+Mode:                	253
+
+Insert range:        	36 - 293
+90th percentile:     	280
+75th percentile:     	264
+50th percentile:     	240
+25th percentile:     	213
+10th percentile:     	189
+Executing jgi.BBDuk [ktrim=r, minlen=40, minlenfraction=0.333, mink=11, tbo, tpe, rcomp=f, overwrite=true, k=23, hdist=1, hdist2=1, ftm=5, pratio=G,C, plen=20, phist=phist.txt, qhist=qhist.txt, bhist=bhist.txt, gchist=gchist.txt, pigz=t, unpigz=t, zl=4, reproduceName=/home/glbrc.org/millican/TMPDIR/ancient-fox/reproduce.sh, ow=true, in1=/home/glbrc.org/millican/metagenome/lamps/data/reads/raw/CABBI19_005.fastq.gz, out1=/home/glbrc.org/millican/TMPDIR/ancient-fox/TEMP_TRIM_4057d8ddd07a5eff783e4b0e24a0ec_out-test.fqz, rqc=hashmap, outduk=ktrim_/home/glbrc.org/millican/TMPDIR/ancient-fox/kmerStats.txt, stats=ktrim_/home/glbrc.org/millican/TMPDIR/ancient-fox/scaffoldStats.txt, loglog, loglogout, adapters=adaptersDetected.fa]
+Version 39.01
+
+Set quality histogram output to qhist.txt
+Set base content histogram output to bhist.txt
+Set GC histogram output to gchist.txt
+Exception in thread "main" java.lang.RuntimeException: Unknown parameter reproduceName=/home/glbrc.org/millican/TMPDIR/ancient-fox/reproduce.sh
+	at jgi.BBDuk.<init>(BBDuk.java:538)
+	at jgi.RQCFilter2.ktrim(RQCFilter2.java:1890)
+	at jgi.RQCFilter2.process(RQCFilter2.java:1007)
+	at jgi.RQCFilter2.main(RQCFilter2.java:73)

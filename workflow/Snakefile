@@ -1,0 +1,58 @@
+#!/usr/bin/env snakemake -s
+import os
+# set path for configuration file
+configfile: "/home/glbrc.org/millican/repos/trait-mapper/workflow/config.yml"
+# set working directory path
+workdir: config["working_directory"]
+# function to create list of sample names
+def get_sample_names():
+    sample_list = []
+    dir_path = config["sample_directory"]
+    for file_name in os.listdir(dir_path):
+        # Use regular expression to match and replace extensions
+        name = re.sub(r"\.(fastq|fasta|fq|fa)(\.gz)?$", "", file_name)
+        sample_list.append(name)
+    return sample_list
+
+sample_names = get_sample_names()
+reference_databases = config["reference_database"]
+
+wildcard_constraints:
+    sample_name = '^[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?$',
+    reference_database = '^[a-z]+-[a-z]+$'
+
+# import preprocessing workflow
+module preprocess_workflow:
+    snakefile:
+        "preprocess_workflow.smk"
+    config:
+        config
+
+use rule * from preprocess_workflow
+
+# import trait searching workflow
+module search_workflow:
+    snakefile:
+        "search_workflow.smk"
+    config:
+        config
+
+use rule * from search_workflow as search_*
+
+# import read_counts workflow
+module readmap_workflow:
+    snakefile:
+        "read_counts.smk"
+    config:
+        config
+
+use rule * from readmap_workflow as map_*
+
+rule all:
+    input:
+        expand("{project_directory}/data/output/{sample_name}.{reference_database}.bestqueryDB", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"]),
+        expand("{project_directory}/data/output/{sample_name}.queryDB", sample_name = config["sample_name"], project_directory = config["working_directory"]),
+        expand("{project_directory}/data/output/{sample_name}.{reference_database}.counted_mapped_hits.txt", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"]),
+        expand("{project_directory}/data/output/{sample_name}.{reference_database}.query_hits.txt", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"]),
+        expand("{project_directory}/data/output/{sample_name}.{reference_database}.query_hits.fna", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"])
+    default_target: True
