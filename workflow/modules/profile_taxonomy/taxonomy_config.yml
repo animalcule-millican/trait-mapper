@@ -1,0 +1,7 @@
+data_directory: "/home/glbrc.org/millican/projects/Inter_BRC/trait-mapper/data"
+sample_directory: "/home/glbrc.org/millican/projects/Inter_BRC/samples"
+reference_directory: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/database/pgp"
+taxa: ['archaea', 'bacteria', 'plant', 'viral','fungi','protozoa','invertebrate'] 
+kmer: ['21','31','51']
+lineage_database: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/lineage/taxonomy_lineage.db"
+working_directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow/modules/profile_taxonomy"

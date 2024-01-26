@@ -1,0 +1,5 @@
+data_directory: "/home/glbrc.org/millican/projects/Inter_BRC/trait-mapper/data"
+sample_directory: "/home/glbrc.org/millican/projects/Inter_BRC/samples"
+reference_directory: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/database/pgp"
+target_database: ["Competitive_Fitness",'Ecosystem_Service',"Plant_Colonization","Stress_Control", "eps_operon", "nitrogen-cycle"]
+working_directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow/modules/search_pgp_database"

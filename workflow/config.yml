@@ -1,12 +1,12 @@
 working_directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow"
 project_directory: "/home/glbrc.org/millican/repos/trait-mapper"
-sample_directory: "/home/glbrc.org/millican/metagenome/lamps/data/reads/raw"
-sample_name: ['mt5004', 'CABBI19_009', 'S5201_1', 'CABBI19_001', 'S2201_1', 'mt3004', 'S5201_3', 'mt2023', 'mt5016', 'S5201_4', 'S2201_2', 'S2201_4', 'S5201_2', 'CABBI19_005', 'S2201_3', 'mt2005']
-outlog: "/home/glbrc.org/millican/repos/trait-mapper/log"
-reference_database: ["nitrogen-cycle", "microbial-eps", "plant-stimulation", "biocontrol", "phosphorus-cycle"]
-reference_directory: "/home/glbrc.org/millican/ref_db/pgp"
-taxonomy_DB: "/home/glbrc.org/millican/ref_db/trait_db/NR/NRDB"
-script_directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow/scripts"
-stats: "/home/glbrc.org/millican/repos/trait-mapper/.stats/trait-charmer.stats"
-report: "/home/glbrc.org/millican/repos/trait-mapper/.reports/trait-charmer.report"
-directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow"
+target_database: ["Competitive_Fitness",'Ecosystem_Service',"Plant_Colonization","Stress_Control", "eps_operon", "nitrogen-cycle"]
+sample_directory: "/home/glbrc.org/millican/projects/Inter_BRC/samples"
+data_directory: "/home/glbrc.org/millican/projects/Inter_BRC/trait-mapper/data"
+pgp_map_pickle: "/home/glbrc.org/millican/repos/trait-mapper/reference_database/pgp_database_map.pkl"
+reference_directory: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/database/pgp"
+target_database: ["Competitive_Fitness",'Ecosystem_Service',"Plant_Colonization","Stress_Control", "eps_operon", "nitrogen-cycle"]
+taxa: ['archaea', 'bacteria', 'plant', 'viral','fungi','protozoa','invertebrate'] 
+kmer: ['21','31','51']
+lineage_database: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/lineage/taxonomy_lineage.db"
+RQCFilterData: "/home/glbrc.org/millican/ref_db/RQCFilterData"

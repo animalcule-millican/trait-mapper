@@ -1,0 +1,4 @@
+sample_directory: "/home/glbrc.org/millican/projects/Inter_BRC/samples"
+data_directory: "/home/glbrc.org/millican/projects/Inter_BRC/trait-mapper/data"
+RQCFilterData: "/home/glbrc.org/millican/ref_db/RQCFilterData"
+working_directory: "/home/glbrc.org/millican/repos/trait-mapper/workflow/modules/preprocess_metagenomes"

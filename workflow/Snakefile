@@ -1,58 +1,238 @@
-#!/usr/bin/env snakemake -s
 import os
-# set path for configuration file
-configfile: "/home/glbrc.org/millican/repos/trait-mapper/workflow/config.yml"
-# set working directory path
-workdir: config["working_directory"]
-# function to create list of sample names
-def get_sample_names():
-    sample_list = []
-    dir_path = config["sample_directory"]
-    for file_name in os.listdir(dir_path):
-        # Use regular expression to match and replace extensions
-        name = re.sub(r"\.(fastq|fasta|fq|fa)(\.gz)?$", "", file_name)
-        sample_list.append(name)
-    return sample_list
+import glob
+import random
+import pickle
 
-sample_names = get_sample_names()
-reference_databases = config["reference_database"]
+configfile: "/home/glbrc.org/millican/repos/trait-mapper/workflow/config.yml"
+workdir: config["working_directory"]
+
+def create_tmpdir():
+    with open("/home/glbrc.org/millican/repos/metagenome_snakemake/etc/adj-aml.pkl", 'rb') as f:
+        adj, aml = pickle.load(f)
+    temp_dir_base = "/home/glbrc.org/millican/TMPDIR"    # Replace with the base path for temporary directories
+    # Construct the temporary directory path
+    tmpdir = os.path.join(temp_dir_base, f"{random.choice(adj)}-{random.choice(aml)}")
+    # Check if the directory exists, and find a new combination if it does
+    while os.path.exists(tmpdir):
+        tmpdir = os.path.join(temp_dir_base, f"{random.choice(adj)}-{random.choice(aml)}")
+    # Once we find a combination that does not already exist
+    # Create the temporary directory
+    os.makedirs(tmpdir, exist_ok=True)
+    return tmpdir
+
+def get_sample_names(config):
+    refdir = config["sample_directory"]
+    gdir = os.path.join(refdir, "genomes")
+    g_files = []
+    for file in glob.glob(os.path.join(refdir, "*.filter-METAGENOME.fastq.gz")):
+        name_file = os.path.basename(file).replace(".filter-METAGENOME.fastq.gz", "")
+        g_files.append(name_file)
+    return g_files
+
+#g_files = get_reference_names(config)
+sample_names = get_sample_names(config)
 
 wildcard_constraints:
-    sample_name = '^[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?$',
-    reference_database = '^[a-z]+-[a-z]+$'
-
-# import preprocessing workflow
-module preprocess_workflow:
-    snakefile:
-        "preprocess_workflow.smk"
-    config:
-        config
-
-use rule * from preprocess_workflow
-
-# import trait searching workflow
-module search_workflow:
-    snakefile:
-        "search_workflow.smk"
-    config:
-        config
-
-use rule * from search_workflow as search_*
-
-# import read_counts workflow
-module readmap_workflow:
-    snakefile:
-        "read_counts.smk"
-    config:
-        config
-
-use rule * from readmap_workflow as map_*
+    sample_name = "|".join(sample_names),
+    data_directory = config["data_directory"],
+    sample_directory = config["sample_directory"],
+    target_database = "|".join(config["target_database"]),
+    reference_directory = config["reference_directory"],
+    taxa = "|".join(config["taxa"]),
+    kmer = "|".join(config["kmer"]),
+    lineage_database = config["lineage_database"]
 
 rule all:
     input:
-        expand("{project_directory}/data/output/{sample_name}.{reference_database}.bestqueryDB", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"]),
-        expand("{project_directory}/data/output/{sample_name}.queryDB", sample_name = config["sample_name"], project_directory = config["working_directory"]),
-        expand("{project_directory}/data/output/{sample_name}.{reference_database}.counted_mapped_hits.txt", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"]),
-        expand("{project_directory}/data/output/{sample_name}.{reference_database}.query_hits.txt", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"]),
-        expand("{project_directory}/data/output/{sample_name}.{reference_database}.query_hits.fna", sample_name = config["sample_name"], reference_database = config["reference_database"], project_directory = config["working_directory"])
+        expand("{data_directory}/count/{sample_name}.csv", sample_name = sample_names, data_directory = config["data_directory"]),
+        expand("{data_directory}/database/{sample_name}.queryDB", sample_name = sample_names, data_directory = config["data_directory"]),
+        #expand("{data_directory}/sample_taxonomy/{sample_name}_{taxa}_k{kmer}.csv", sample_name=sample_names, taxa=config["taxa"], kmer=config["kmer"], data_directory=config["data_directory"]),
+        expand("{data_directory}/hit_files/{sample_name}.{target_database}.query_hits.txt", sample_name = sample_names, target_database = config["target_database"], data_directory = config["data_directory"])
+
     default_target: True
+
+rule filter_reads:
+    input:
+        config["sample_directory"] + "/{sample_name}.filter-METAGENOME.fastq.gz"
+    output:
+        "{data_directory}/reads/{sample_name}.filt.fq.gz"
+    params:
+        RQCFilterData = config["RQCFilterData"],
+        tmpdir = create_tmpdir()
+    threads: 16
+    resources:
+        mem_mb = 30000
+    conda:
+        "trait-mapper"
+    shell:
+        """
+        cd {params.tmpdir}
+
+        rqcfilter2.sh -Xmx30g in={input} out={output} \
+        rqcfilterdata={params.RQCFilterData} \
+        barcodefilter=f \
+        qtrim=r \
+        trimq=5 \
+        silvalocal=f \
+        usetmpdir=t \
+        tmpdir={params.tmpdir} \
+        merge=f
+
+        cd ~
+        rm -r {params.tmpdir}
+        """
+
+rule ecc_reads:
+    input:
+        config["sample_directory"] + "/{sample_name}.filter-METAGENOME.fastq.gz"
+    output:
+        "{data_directory}/reads/{sample_name}.ecc.fq.gz"
+    params:
+        tmpdir = create_tmpdir()
+    threads: 16
+    resources:
+        mem_mb = 30000
+    conda: 
+        "trait-mapper"
+    shell:
+        """
+        export TMPDIR={params.tmpdir}
+        bbcms.sh in={input} out={output} bits=4 hashes=3 k=31
+        rm -r {params.tmpdir}
+        """
+
+rule query_DB:
+    input:
+        "{data_directory}/reads/{sample_name}.ecc.fq.gz"
+    output:
+        "{data_directory}/database/{sample_name}.queryDB"
+    params:
+        tmpdir = create_tmpdir()
+    threads: 12
+    resources:
+        mem_mb = 30000
+    conda:
+        "trait-mapper"
+    shell:
+        """
+        export TMPDIR={params.tmpdir}
+        mmseqs createdb {input} {output}
+        mmseqs createindex {output} $TMPDIR/tmp --search-type 2 --translation-table 11 --threads {threads} --remove-tmp-files 1
+        rm -r {params.tmpdir}
+        """
+
+rule sketch_metagenomes:
+    input:
+        "{data_directory}/reads/{sample_name}.ecc.fq.gz"
+    output:
+        "{data_directory}/sample_sketches/{sample_name}.sig.gz"
+    threads: 1
+    resources:
+        mem_mb = 30000
+    conda:
+        "branchwater"
+    shell:
+        """
+        sourmash sketch dna -p k=21k=31,k=51,scaled=1000,abund --name {wildcards.sample_name} -o {output} {input}
+        """
+
+rule search_query:
+    input:
+        query = "{data_directory}/database/{sample_name}.queryDB",
+        target = config["reference_directory"] + "/{target_database}_db"
+    output:
+        hits = "{data_directory}/hit_files/{sample_name}.{target_database}.query_hits.txt"
+    params:
+        tmpdir = create_tmpdir()
+    threads: 24
+    resources:
+        mem_mb = 200000
+    shell:
+        """
+        export TMPDIR={params.tmpdir}
+        mmseqs search {input.query} {input.target} $TMPDIR/result $TMPDIR/tmp -e 1.000E-04 -s 3.5 --db-load-mode 3 --alignment-mode 1 --exact-kmer-matching 1 --max-accept 5 --max-rejected 5 --max-seqs 200 --threads {threads} --remove-tmp-files 1 --translation-table 11
+        mmseqs filterdb $TMPDIR/result $TMPDIR/besthits --extract-lines 1 --threads {threads}
+        mmseqs convertalis {input.query} {input.target} $TMPDIR/besthits {output.hits} --format-mode 0 --db-load-mode 3 --format-output query,qheader,qseq,target,theader,tseq,pident,evalue --threads {threads}
+        rm -rf {params.tmpdir}
+        """
+
+rule fastgather:
+    input:
+        sample = "{data_directory}/signatures/{sample_name}.sig.gz",
+        ref = expand("{reference_directory}/reference_signatures/{{taxa}}/{{taxa}}_sketch_list.txt", reference_directory = config["reference_directory"])
+    output:
+        "{data_directory}/gather/{sample_name}_{taxa}_k{kmer}.fastgather.csv"
+    threads: 16
+    resources:
+        mem_mb = 30000
+    conda:
+        "branchwater"
+    shell:
+        """
+        sourmash scripts fastgather -o {output} -t 10000 -k {wildcards.kmer} -c {threads} {input.sample} {input.ref}
+        """
+
+rule gather:
+    input:
+        sample = "{data_directory}/sample_sketches/{sample_name}.sig.gz",
+        ref = expand("{reference_directory}/reference_signatures/{{taxa}}/{{taxa}}_sigs.zip", reference_directory = config["reference_directory"]),
+        gather = "{data_directory}/gather/{sample_name}_{taxa}_k{kmer}.fastgather.csv"
+    output:
+        "{data_directory}/gather/{sample_name}_{taxa}_k{kmer}.gather.csv"
+    threads: 1
+    resources:
+        mem_mb = 20000
+    conda:
+        "branchwater"
+    shell:
+        """
+        sourmash gather {input.sample} {input.ref} --picklist {input.gather}:match_name:ident -o {output} -k {wildcards.kmer} --threshold-bp 10000
+        """
+
+rule taxonomy:
+    input:
+        gather = expand("{{data_directory}}/gather/{{sample_name}}_{taxa}_k{{kmer}}.gather.csv", taxa=config["taxa"]),
+        lin = config["lineage_database"]
+    output:
+        "{data_directory}/sample_taxonomy/{sample_name}_k{kmer}.csv"
+    threads: 1
+    resources:
+        mem_mb = 20480
+    conda:
+        "branchwater"
+    shell:
+        """
+        sourmash tax metagenome --gather {input.gather} --taxonomy {input.lin} --keep-full-identifiers > {output}
+        """
+
+rule combine_hits:
+    input:
+        expand("{data_directory}/hit_files/{{sample_name}}.{target_database}.query_hits.txt", target_database = config["target_database"], data_directory = config["data_directory"])
+    output:
+        "{data_directory}/hit_files/{sample_name}.csv"
+    params:
+        map_pickle = config['pgp_map_pickle']
+    threads: 1
+    resources:
+        mem_mb = 10000
+    conda:
+        "trait-mapper"
+    shell:
+        """
+        scripts/combine_hits.py {input} {params.map_pickle} {output}
+        """
+
+rule tally_counts:
+    input:
+        "{data_directory}/hit_files/{sample_name}.csv"
+    output:
+        "{data_directory}/count/{sample_name}.csv"
+    threads: 1
+    resources:
+        mem_mb = 10000
+    conda:
+        "trait-mapper"
+    shell:
+        """
+        Rscript scripts/tally_hits.r {input} {output}
+        """
