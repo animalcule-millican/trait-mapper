@@ -1,0 +1,7 @@
+universe = scheduler
+executable = /home/glbrc.org/millican/repos/trait-mapper/map_traits.sh
+error = /home/glbrc.org/millican/repos/trait-mapper/log/prep-ref_snek.err
+log = /home/glbrc.org/millican/repos/trait-mapper/log/prep-ref_snek.log
+output = /home/glbrc.org/millican/repos/trait-mapper/log/prep-ref_snek.out
+batch_name = trait_mapper.$(Cluster)
+queue

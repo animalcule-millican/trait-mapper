@@ -4,7 +4,7 @@ target_database: ["Competitive_Fitness",'Ecosystem_Service',"Plant_Colonization"
 sample_directory: "/home/glbrc.org/millican/projects/Inter_BRC/samples"
 data_directory: "/home/glbrc.org/millican/projects/Inter_BRC/trait-mapper/data"
 pgp_map_pickle: "/home/glbrc.org/millican/repos/trait-mapper/reference_database/pgp_database_map.pkl"
-reference_directory: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/database/pgp"
+reference_directory: "/home/glbrc.org/millican/projects/Inter_BRC/reference_files/pgp_trait_database"
 target_database: ["Competitive_Fitness",'Ecosystem_Service',"Plant_Colonization","Stress_Control", "eps_operon", "nitrogen-cycle"]
 taxa: ['archaea', 'bacteria', 'plant', 'viral','fungi','protozoa','invertebrate'] 
 kmer: ['21','31','51']

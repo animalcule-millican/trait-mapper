@@ -22,9 +22,8 @@ def create_tmpdir():
 
 def get_sample_names(config):
     refdir = config["sample_directory"]
-    gdir = os.path.join(refdir, "genomes")
     g_files = []
-    for file in glob.glob(os.path.join(refdir, "*.filter-METAGENOME.fastq.gz")):
+    for file in glob.glob(f"{refdir}/*.filter-METAGENOME.fastq.gz"):
         name_file = os.path.basename(file).replace(".filter-METAGENOME.fastq.gz", "")
         g_files.append(name_file)
     return g_files
@@ -45,45 +44,15 @@ wildcard_constraints:
 rule all:
     input:
         expand("{data_directory}/count/{sample_name}.csv", sample_name = sample_names, data_directory = config["data_directory"]),
-        expand("{data_directory}/database/{sample_name}.queryDB", sample_name = sample_names, data_directory = config["data_directory"]),
+        #expand("{data_directory}/database/{sample_name}.queryDB", sample_name = sample_names, data_directory = config["data_directory"]),
         #expand("{data_directory}/sample_taxonomy/{sample_name}_{taxa}_k{kmer}.csv", sample_name=sample_names, taxa=config["taxa"], kmer=config["kmer"], data_directory=config["data_directory"]),
         expand("{data_directory}/hit_files/{sample_name}.{target_database}.query_hits.txt", sample_name = sample_names, target_database = config["target_database"], data_directory = config["data_directory"])
     default_target: True
 
-rule filter_reads:
-    input:
-        config["sample_directory"] + "/{sample_name}.filter-METAGENOME.fastq.gz"
-    output:
-        "{data_directory}/reads/{sample_name}.filt.fq.gz"
-    params:
-        RQCFilterData = config["RQCFilterData"],
-        tmpdir = create_tmpdir()
-    threads: 16
-    resources:
-        mem_mb = 30000
-    conda:
-        "trait-mapper"
-    shell:
-        """
-        cd {params.tmpdir}
-
-        rqcfilter2.sh -Xmx30g in={input} out={output} \
-        rqcfilterdata={params.RQCFilterData} \
-        barcodefilter=f \
-        qtrim=r \
-        trimq=5 \
-        silvalocal=f \
-        usetmpdir=t \
-        tmpdir={params.tmpdir} \
-        merge=f
-
-        cd ~
-        rm -r {params.tmpdir}
-        """
 
 rule ecc_reads:
     input:
-        config["sample_directory"] + "/{sample_name}.filter-METAGENOME.fastq.gz"
+        expand("{sample_directory}/{{sample_name}}.filter-METAGENOME.fastq.gz", sample_directory = config["sample_directory"])
     output:
         "{data_directory}/reads/{sample_name}.ecc.fq.gz"
     params:
@@ -102,7 +71,7 @@ rule ecc_reads:
 
 rule query_DB:
     input:
-        "{data_directory}/reads/{sample_name}.ecc.fq.gz"
+        expand("{sample_directory}/{{sample_name}}.filter-METAGENOME.fastq.gz", sample_directory = config["sample_directory"])
     output:
         "{data_directory}/database/{sample_name}.queryDB"
     params:
@@ -120,21 +89,6 @@ rule query_DB:
         rm -r {params.tmpdir}
         """
 
-rule sketch_metagenomes:
-    input:
-        "{data_directory}/reads/{sample_name}.ecc.fq.gz"
-    output:
-        "{data_directory}/sample_sketches/{sample_name}.sig.gz"
-    threads: 1
-    resources:
-        mem_mb = 30000
-    conda:
-        "branchwater"
-    shell:
-        """
-        sourmash sketch dna -p k=21k=31,k=51,scaled=1000,abund --name {wildcards.sample_name} -o {output} {input}
-        """
-
 rule search_query:
     input:
         query = "{data_directory}/database/{sample_name}.queryDB",
@@ -146,6 +100,8 @@ rule search_query:
     threads: 24
     resources:
         mem_mb = 200000
+    conda:
+        "trait-mapper"
     shell:
         """
         export TMPDIR={params.tmpdir}
@@ -153,55 +109,6 @@ rule search_query:
         mmseqs filterdb $TMPDIR/result $TMPDIR/besthits --extract-lines 1 --threads {threads}
         mmseqs convertalis {input.query} {input.target} $TMPDIR/besthits {output.hits} --format-mode 0 --db-load-mode 3 --format-output query,qheader,qseq,target,theader,tseq,pident,evalue --threads {threads}
         rm -rf {params.tmpdir}
-        """
-
-rule fastgather:
-    input:
-        sample = "{data_directory}/signatures/{sample_name}.sig.gz",
-        ref = expand("{reference_directory}/reference_signatures/{{taxa}}/{{taxa}}_sketch_list.txt", reference_directory = config["reference_directory"])
-    output:
-        "{data_directory}/gather/{sample_name}_{taxa}_k{kmer}.fastgather.csv"
-    threads: 16
-    resources:
-        mem_mb = 30000
-    conda:
-        "branchwater"
-    shell:
-        """
-        sourmash scripts fastgather -o {output} -t 10000 -k {wildcards.kmer} -c {threads} {input.sample} {input.ref}
-        """
-
-rule gather:
-    input:
-        sample = "{data_directory}/sample_sketches/{sample_name}.sig.gz",
-        ref = expand("{reference_directory}/reference_signatures/{{taxa}}/{{taxa}}_sigs.zip", reference_directory = config["reference_directory"]),
-        gather = "{data_directory}/gather/{sample_name}_{taxa}_k{kmer}.fastgather.csv"
-    output:
-        "{data_directory}/gather/{sample_name}_{taxa}_k{kmer}.gather.csv"
-    threads: 1
-    resources:
-        mem_mb = 20000
-    conda:
-        "branchwater"
-    shell:
-        """
-        sourmash gather {input.sample} {input.ref} --picklist {input.gather}:match_name:ident -o {output} -k {wildcards.kmer} --threshold-bp 10000
-        """
-
-rule taxonomy:
-    input:
-        gather = expand("{{data_directory}}/gather/{{sample_name}}_{taxa}_k{{kmer}}.gather.csv", taxa=config["taxa"]),
-        lin = config["lineage_database"]
-    output:
-        "{data_directory}/sample_taxonomy/{sample_name}_k{kmer}.csv"
-    threads: 1
-    resources:
-        mem_mb = 20480
-    conda:
-        "branchwater"
-    shell:
-        """
-        sourmash tax metagenome --gather {input.gather} --taxonomy {input.lin} --keep-full-identifiers > {output}
         """
 
 rule combine_hits:
